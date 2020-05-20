@@ -1,31 +1,52 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import DetailView, ListView, CreateView
+from django.urls import reverse_lazy
+from django.views.generic import (
+	DeleteView, DetailView, ListView, CreateView, UpdateView
+	)
 from .forms import TweetModelForm
+from .mixins import FormUserNeededMixin, UserOwnerMixin
 from .models import Tweet
 
-# Create your views here.
-class TweetCreateView(CreateView):
+# Create
+class TweetCreateView(FormUserNeededMixin, CreateView):
 	#queryset = Tweet.objects.all()
 	form_class = TweetModelForm
 	template_name = 'tweets/create_view.html'
 	success_url = "/tweet/create"
-	def form_valid(self, form):
-		form.instance.user = self.request.user
-		return super(TweetCreateView, self).form_valid(form)
-
-def tweet_create_view(request):
-	form = TweetModelForm(request.POST or None)
-	if form.is_valid():
-		instance = form.save(commit=False)
-		instance.user = request.user
-		instance.save()
-	context = {
-		"form":form
-	}
-	return render(request,'tweets/create_view.html', context)
+	#login_url = '/admin/'
+	# def form_valid(self, form):
+	# 	if self.request.user.is_authenticated:
+	# 		form.instance.user = self.request.user
+	# 		return super(TweetCreateView, self).form_valid(form)
+	# 	else:
+	# 		form._errors[forms.forms.NON_FIELD_ERRORS] = ErrorList(["User must be logged in to continue."])
+	# 		return self.form_invalid(form)
 
 
+# def tweet_create_view(request):
+# 	form = TweetModelForm(request.POST or None)
+# 	if form.is_valid():
+# 		instance = form.save(commit=False)
+# 		instance.user = request.user
+# 		instance.save()
+# 	context = {
+# 		"form":form
+# 	}
+# 	return render(request,'tweets/create_view.html', context)
 
+#update
+class TweetUpdateView(LoginRequiredMixin, UserOwnerMixin, UpdateView):
+	queryset = Tweet.objects.all()
+	form_class = TweetModelForm
+	template_name = 'tweets/update_view.html'
+	success_url = "/tweet/"
+
+#delete
+class TweetDeleteView(LoginRequiredMixin, UserOwnerMixin, DeleteView):
+	model = Tweet
+	template_name = 'tweets/delete_confirm.html'
+	success_url = reverse_lazy("home")
 
 #Retrieve
 class TweetDetailView(DetailView):
